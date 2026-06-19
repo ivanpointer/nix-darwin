@@ -102,6 +102,8 @@
             pkgs.ripgrep
             pkgs.fd
             pkgs.fzf
+            pkgs.libfido2
+            pkgs.pam_u2f
             pkgs.fswatch
             pkgs.watchexec
             pkgs.atuin
@@ -117,6 +119,7 @@
             pkgs.chezmoi
             pkgs._1password-cli
             pkgs.devbox
+            pkgs.google-cloud-sdk
             (pkgs.azure-cli.withExtensions (with pkgs.azure-cli-extensions; [
               azure-devops
               resource-graph
@@ -127,6 +130,17 @@
             pkgs.zsh-vi-mode
             pkgs.lua5_1
             pkgs.luarocks
+
+            # Document conversion and PDF production
+            pkgs.pandoc
+            pkgs.typst
+            pkgs.python3Packages.weasyprint
+            pkgs.tectonic
+            pkgs.poppler-utils
+            pkgs.qpdf
+            pkgs.ghostscript
+            pkgs.imagemagick
+            pkgs.graphviz
 
             # QMK
             pkgs.qmk
@@ -143,6 +157,12 @@
             pkgs.inconsolata
             pkgs.open-sans
             pkgs.nerd-fonts.inconsolata
+            pkgs.noto-fonts
+            pkgs.noto-fonts-color-emoji
+            pkgs.liberation_ttf
+            pkgs.source-serif-pro
+            pkgs.source-sans-pro
+            pkgs.source-code-pro
           ];
 
           homebrew = {
