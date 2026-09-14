@@ -69,6 +69,17 @@
             "opencode-ai@latest"
             "pi-mcp-extension@latest"
           ];
+          mkAvenDaemon = pkgs.writeShellScript "mk-aven-daemon" ''
+            set -euo pipefail
+
+            aven_bin="/opt/homebrew/bin/aven"
+            if [ ! -x "$aven_bin" ]; then
+              echo "Aven is not installed yet; skipping daemon installation"
+              exit 0
+            fi
+
+            exec "$aven_bin" daemon install
+          '';
         in
         {
           nixpkgs.config.allowUnfree = true;
@@ -93,6 +104,15 @@
             pkgs.nil
             pkgs.nodejs
             pkgs.cargo
+
+            # Go development
+            pkgs.go
+            pkgs.gopls
+            pkgs.delve
+            pkgs.gofumpt
+            pkgs.golangci-lint
+            pkgs.gotools
+            pkgs.govulncheck
 
             pkgs.wget
             pkgs.bat
@@ -145,6 +165,7 @@
             # QMK
             pkgs.qmk
             pkgs.dos2unix
+            pkgs.tailscale
           ];
 
           environment.variables.ZSH_VI_MODE_PATH = "${pkgs.zsh-vi-mode}/share/zsh-vi-mode";
@@ -157,6 +178,8 @@
             pkgs.inconsolata
             pkgs.open-sans
             pkgs.nerd-fonts.inconsolata
+            # Fallback icon glyphs for unpatched fonts such as MonoLisaCode.
+            pkgs.nerd-fonts.symbols-only
             pkgs.noto-fonts
             pkgs.noto-fonts-color-emoji
             pkgs.liberation_ttf
@@ -169,10 +192,12 @@
             enable = true;
             taps = [
               "manaflow-ai/cmux"
+              "raine/aven"
             ];
             brews = [
               "docker"
               "docker-compose"
+              "raine/aven/aven"
             ];
             casks = [
               "1password"
@@ -210,6 +235,7 @@
               "openscad@snapshot"
               "visual-studio-code"
               "manaflow-ai/cmux/cmux"
+              "audacity"
             ];
             masApps = {
               "Amphetamine" = 937984704;
@@ -217,7 +243,14 @@
               "Xcode" = 497799835;
             };
 
-            onActivation.cleanup = "zap";
+            # Homebrew 5 removed Homebrew Bundle's --force-cleanup flag, but
+            # nix-darwin currently emits it for cleanup = "zap". Pass the
+            # supported equivalent directly until nix-darwin catches up.
+            onActivation.cleanup = "none";
+            onActivation.extraFlags = [
+              "--cleanup"
+              "--zap"
+            ];
           };
 
           environment.systemPath = [
@@ -245,6 +278,8 @@
           # The platform the configuration will be used on.
           nixpkgs.hostPlatform = "aarch64-darwin";
 
+          services.tailscale.enable = true;
+
           system.keyboard = {
             enableKeyMapping = true;
             userKeyMapping = [ ];
@@ -267,6 +302,23 @@
           '';
 
           system.primaryUser = primaryUser;
+
+          # Universal Control stores its switches in per-host user defaults,
+          # which nix-darwin's system.defaults.CustomUserPreferences does not
+          # target. Enable Universal Control, edge discovery, Handoff, and
+          # Universal Clipboard for the primary user on every activation.
+          system.activationScripts.universalControl.text = ''
+            /usr/bin/sudo -u ${primaryUser} -H /usr/bin/defaults -currentHost write \
+              com.apple.universalcontrol Disable -bool false
+            /usr/bin/sudo -u ${primaryUser} -H /usr/bin/defaults -currentHost write \
+              com.apple.universalcontrol DisableMagicEdges -bool false
+            /usr/bin/sudo -u ${primaryUser} -H /usr/bin/defaults -currentHost write \
+              com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool true
+            /usr/bin/sudo -u ${primaryUser} -H /usr/bin/defaults -currentHost write \
+              com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool true
+            /usr/bin/sudo -u ${primaryUser} -H /usr/bin/defaults write \
+              com.apple.coreservices.useractivityd ClipboardSharingEnabled -bool true
+          '';
 
           # Bootstrap SSH + 1Password config (only if missing)
           # Once chezmoi runs, it owns these files
@@ -317,6 +369,47 @@
                         PATH="${pkgs.nodejs}/bin:$PATH" \
                         ${pkgs.nodejs}/bin/npm install --global --no-audit --no-fund \
                         "''${NPM_GLOBAL_PACKAGES[@]}"
+                    fi
+
+                    # Keep Aven's per-user sync daemon installed. This is
+                    # idempotent and makes sync.interval_seconds effective.
+                    /usr/bin/sudo -u ${primaryUser} -H env \
+                      HOME="${homeDir}" \
+                      PATH="/opt/homebrew/bin:$PATH" \
+                      ${mkAvenDaemon}
+
+                    # Install Amazon Send to Kindle for PDF transfer. Amazon
+                    # serves the macOS package through a short-lived URL, so
+                    # resolve it at activation time instead of pinning a stale
+                    # Homebrew cask URL.
+                    SEND_TO_KINDLE_APP="/Applications/Send to Kindle/Send to Kindle.app"
+                    if [ ! -d "$SEND_TO_KINDLE_APP" ]; then
+                      STK_TMP="$(mktemp -d)"
+                      cleanup_send_to_kindle() {
+                        rm -rf "$STK_TMP"
+                      }
+                      trap cleanup_send_to_kindle EXIT
+
+                      STK_JSON="$STK_TMP/download.json"
+                      STK_PKG="$STK_TMP/SendToKindleForMac-installer.pkg"
+
+                      ${pkgs.curl}/bin/curl --fail --location --compressed --silent --show-error \
+                        "https://www.amazon.com/sendtokindle/download/mac" \
+                        --output "$STK_JSON" || exit 1
+
+                      STK_URL="$(${pkgs.jq}/bin/jq -r '.downloadUrl // empty' "$STK_JSON")"
+                      if [ -z "$STK_URL" ]; then
+                        echo "Could not resolve Send to Kindle installer URL" >&2
+                        exit 1
+                      fi
+
+                      ${pkgs.curl}/bin/curl --fail --location --silent --show-error \
+                        "$STK_URL" \
+                        --output "$STK_PKG" || exit 1
+
+                      /usr/sbin/installer -pkg "$STK_PKG" -target / || exit 1
+                    else
+                      echo "Send to Kindle is already installed; skipping installer"
                     fi
 
                     # Bootstrap ESP-IDF outside nixpkgs so Espressif's own
