@@ -20,49 +20,6 @@
           primaryUser = "ivanpointer";
           homeDir = "/Users/${primaryUser}";
           npmGlobalPrefix = "${homeDir}/.local/share/npm-global";
-          tabbyVersion = "0-unstable-2026-05-23";
-          tabbySrc = pkgs.fetchFromGitHub {
-            owner = "brendandebeasi";
-            repo = "tabby";
-            rev = "31417209b59618e324f80141e66381e4b2d6ef7c";
-            hash = "sha256-2abp2LKu+PtgFGeksvuaZGRDG5bsJPRxY1gyPu5RzhQ=";
-          };
-          tabbyBin = pkgs.buildGoModule {
-            pname = "tabby-tmux-bin";
-            version = tabbyVersion;
-            src = tabbySrc;
-            vendorHash = null;
-            subPackages = [
-              "cmd/input-logger"
-              "cmd/mousetest"
-              "cmd/render-status"
-              "cmd/render-status-window"
-              "cmd/render-tab"
-              "cmd/render-tab-dark-text"
-              "cmd/render-tab-v2"
-              "cmd/tabby"
-            ];
-          };
-          tabbyTmuxPlugin = pkgs.stdenvNoCC.mkDerivation {
-            pname = "tmuxplugin-tabby";
-            version = tabbyVersion;
-            src = tabbySrc;
-            dontBuild = true;
-            installPhase = ''
-              runHook preInstall
-
-              pluginDir="$out/share/tmux-plugins/tabby"
-              mkdir -p "$pluginDir/bin"
-              cp -R . "$pluginDir"
-              rm -rf "$pluginDir/bin"
-              mkdir -p "$pluginDir/bin"
-              for bin in ${tabbyBin}/bin/*; do
-                ln -s "$bin" "$pluginDir/bin/$(basename "$bin")"
-              done
-
-              runHook postInstall
-            '';
-          };
           npmGlobalPackages = [
             "@openai/codex@latest"
             "@earendil-works/pi-coding-agent@latest"
@@ -92,7 +49,6 @@
             pkgs.tmuxPlugins.catppuccin
             pkgs.tmuxPlugins.cpu
             pkgs.tmuxPlugins.battery
-            tabbyTmuxPlugin
 
             # neovim
             pkgs.neovim
@@ -172,7 +128,6 @@
           environment.variables.CATPPUCCIN_TMUX_PATH = "${pkgs.tmuxPlugins.catppuccin.rtp}";
           environment.variables.TMUX_CPU_PATH = "${pkgs.tmuxPlugins.cpu.rtp}";
           environment.variables.TMUX_BATTERY_PATH = "${pkgs.tmuxPlugins.battery.rtp}";
-          environment.variables.TABBY_TMUX_PATH = "${tabbyTmuxPlugin}/share/tmux-plugins/tabby/tabby.tmux";
 
           fonts.packages = [
             pkgs.inconsolata
