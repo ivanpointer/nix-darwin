@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    workmux.url = "github:raine/workmux";
   };
 
   outputs =
@@ -12,6 +13,7 @@
       self,
       nix-darwin,
       nixpkgs,
+      workmux,
     }:
     let
       configuration =
@@ -25,6 +27,7 @@
             "@earendil-works/pi-coding-agent@latest"
             "opencode-ai@latest"
             "pi-mcp-extension@latest"
+            "@nanonets/graft@latest"
           ];
           mkAvenDaemon = pkgs.writeShellScript "mk-aven-daemon" ''
             set -euo pipefail
@@ -49,6 +52,7 @@
             pkgs.tmuxPlugins.catppuccin
             pkgs.tmuxPlugins.cpu
             pkgs.tmuxPlugins.battery
+            workmux.packages.${pkgs.system}.default
 
             # neovim
             pkgs.neovim
@@ -495,7 +499,6 @@
             dock.persistent-apps = [
               "/Applications/1Password.app"
               "/Applications/Ghostty.app"
-              "/Applications/cmux.app"
               "/System/Applications/Calendar.app"
               "/Applications/Microsoft Outlook.app"
               "/System/Applications/Messages.app"
