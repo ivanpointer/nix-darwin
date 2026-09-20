@@ -52,7 +52,7 @@
             pkgs.tmuxPlugins.catppuccin
             pkgs.tmuxPlugins.cpu
             pkgs.tmuxPlugins.battery
-            workmux.packages.${pkgs.system}.default
+            workmux.packages.${pkgs.stdenv.hostPlatform.system}.default
 
             # neovim
             pkgs.neovim
@@ -383,7 +383,8 @@
 
                     if [ ! -d "$ESP_IDF_DIR/.git" ]; then
                       /usr/bin/sudo -u ${primaryUser} -H \
-                        ${pkgs.git}/bin/git clone --recursive https://github.com/espressif/esp-idf.git "$ESP_IDF_DIR"
+                        ${pkgs.git}/bin/git clone --branch "$ESP_IDF_VERSION" --recursive \
+                        https://github.com/espressif/esp-idf.git "$ESP_IDF_DIR"
                     fi
 
                     /usr/bin/sudo -u ${primaryUser} -H env \
@@ -392,8 +393,18 @@
                       sh -lc "
                         set -e
                         cd '$ESP_IDF_DIR'
-                        ${pkgs.git}/bin/git fetch --tags
-                        ${pkgs.git}/bin/git checkout '$ESP_IDF_VERSION'
+
+                        # The release is pinned, so avoid recursively fetching every
+                        # ESP-IDF submodule branch on every darwin-rebuild. Apart from
+                        # being slow, stale upstream submodule refs can make that fetch
+                        # fail even though this release's pinned commits are available.
+                        if ! ${pkgs.git}/bin/git rev-parse --verify --quiet \
+                          'refs/tags/$ESP_IDF_VERSION^{commit}' >/dev/null; then
+                          ${pkgs.git}/bin/git fetch --no-recurse-submodules origin \
+                            'refs/tags/$ESP_IDF_VERSION:refs/tags/$ESP_IDF_VERSION'
+                        fi
+                        ${pkgs.git}/bin/git checkout --detach '$ESP_IDF_VERSION'
+                        ${pkgs.git}/bin/git submodule sync --recursive
                         ${pkgs.git}/bin/git submodule update --init --recursive
                         ./install.sh esp32
                         python3 tools/idf_tools.py install-python-env --reinstall --features core

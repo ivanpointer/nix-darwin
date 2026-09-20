@@ -4,7 +4,7 @@ SHELL := /bin/zsh
 .PHONY: apply push
 
 apply:
-	sudo darwin-rebuild switch
+	sudo darwin-rebuild switch --flake .#Ivans-MacBook-Pro
 
 push:
 	set -euo pipefail
