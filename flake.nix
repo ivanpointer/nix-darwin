@@ -87,7 +87,6 @@
             pkgs.pam_u2f
             pkgs.fswatch
             pkgs.watchexec
-            pkgs.inkscape
             pkgs.atuin
             pkgs.zoxide
             pkgs.git
@@ -163,6 +162,7 @@
             casks = [
               "1password"
               "google-chrome"
+              "inkscape"
               "the-unarchiver"
               "yubico-authenticator"
               "ghostty"
@@ -207,6 +207,7 @@
             # Homebrew 5 removed Homebrew Bundle's --force-cleanup flag, but
             # nix-darwin currently emits it for cleanup = "zap". Pass the
             # supported equivalent directly until nix-darwin catches up.
+            onActivation.autoUpdate = true;
             onActivation.cleanup = "none";
             onActivation.extraFlags = [
               "--cleanup"
