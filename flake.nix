@@ -64,6 +64,7 @@
             pkgs.nil
             pkgs.nodejs
             pkgs.cargo
+            pkgs.python314
 
             # Go development
             pkgs.go
@@ -381,6 +382,20 @@
                     mkdir -p "$ESP_ROOT"
                     chown ${primaryUser}:staff "$ESP_ROOT"
 
+                    # A released ESP-IDF checkout has a large, version-specific
+                    # submodule graph. Preserve an older checkout rather than
+                    # carrying its nested Git metadata across a version upgrade.
+                    if [ -d "$ESP_IDF_DIR/.git" ]; then
+                      ESP_IDF_CURRENT_VERSION="$(
+                        ${pkgs.git}/bin/git -C "$ESP_IDF_DIR" describe --tags --exact-match 2>/dev/null || true
+                      )"
+                      if [ "$ESP_IDF_CURRENT_VERSION" != "$ESP_IDF_VERSION" ]; then
+                        ESP_IDF_BACKUP_DIR="$ESP_ROOT/esp-idf-$ESP_IDF_CURRENT_VERSION-$(date +%Y%m%d%H%M%S)"
+                        echo "Preserving ESP-IDF $ESP_IDF_CURRENT_VERSION at $ESP_IDF_BACKUP_DIR before upgrading to $ESP_IDF_VERSION"
+                        mv "$ESP_IDF_DIR" "$ESP_IDF_BACKUP_DIR"
+                      fi
+                    fi
+
                     if [ ! -d "$ESP_IDF_DIR/.git" ]; then
                       /usr/bin/sudo -u ${primaryUser} -H \
                         ${pkgs.git}/bin/git clone --branch "$ESP_IDF_VERSION" --recursive \
@@ -389,8 +404,8 @@
 
                     /usr/bin/sudo -u ${primaryUser} -H env \
                       HOME="${homeDir}" \
-                      PATH="${pkgs.git}/bin:${pkgs.gnumake}/bin:${pkgs.python312}/bin:$PATH" \
-                      sh -lc "
+                      PATH="${pkgs.git}/bin:${pkgs.gnumake}/bin:${pkgs.python314}/bin:$PATH" \
+                      sh -c "
                         set -e
                         cd '$ESP_IDF_DIR'
 
