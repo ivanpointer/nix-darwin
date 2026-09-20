@@ -20,6 +20,11 @@
           primaryUser = "ivanpointer";
           homeDir = "/Users/${primaryUser}";
           npmGlobalPrefix = "${homeDir}/.local/share/npm-global";
+          pythonWithUiTools = pkgs.python314.withPackages (ps: [
+            ps.pillow
+            ps.numpy
+            ps.scipy
+          ]);
           npmGlobalPackages = [
             "@openai/codex@latest"
             "@earendil-works/pi-coding-agent@latest"
@@ -61,7 +66,9 @@
             pkgs.nil
             pkgs.nodejs
             pkgs.cargo
-            pkgs.python314
+            # System-wide image-analysis Python. Its python3 is on the
+            # nix-darwin system PATH ahead of macOS's /usr/bin/python3.
+            pythonWithUiTools
 
             # Go development
             pkgs.go
