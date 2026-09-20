@@ -4,7 +4,8 @@ SHELL := /bin/zsh
 .PHONY: apply push
 
 apply:
-	sudo darwin-rebuild switch --flake .#Ivans-MacBook-Pro
+	sudo /usr/bin/env NIX_CONFIG="extra-experimental-features = dynamic-derivations" \
+		darwin-rebuild switch --flake .#Ivans-MacBook-Pro
 
 push:
 	set -euo pipefail

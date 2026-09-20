@@ -208,6 +208,7 @@
             # nix-darwin currently emits it for cleanup = "zap". Pass the
             # supported equivalent directly until nix-darwin catches up.
             onActivation.autoUpdate = true;
+            onActivation.upgrade = true;
             onActivation.cleanup = "none";
             onActivation.extraFlags = [
               "--cleanup"
@@ -225,7 +226,7 @@
           nix.enable = false;
 
           # Necessary for using flakes on this system.
-          nix.settings.experimental-features = "nix-command flakes";
+          nix.settings.experimental-features = "nix-command flakes dynamic-derivations";
 
           # Enable alternative shell support in nix-darwin.
           # programs.fish.enable = true;
@@ -378,28 +379,27 @@
                     # installer manages the target toolchains and Python env.
                     ESP_ROOT="${homeDir}/esp"
                     ESP_IDF_DIR="$ESP_ROOT/esp-idf"
-                    ESP_IDF_VERSION="v6.1"
+                    ESP_IDF_REF="release/v6.1"
+                    ESP_IDF_REF_FILE="$ESP_ROOT/.nix-darwin-esp-idf-ref"
 
                     mkdir -p "$ESP_ROOT"
                     chown ${primaryUser}:staff "$ESP_ROOT"
 
-                    # A released ESP-IDF checkout has a large, version-specific
-                    # submodule graph. Preserve an older checkout rather than
-                    # carrying its nested Git metadata across a version upgrade.
+                    # ESP-IDF's submodule graph changes between release lines.
+                    # Preserve a checkout when changing the managed branch rather
+                    # than carrying its nested Git metadata into the new release.
                     if [ -d "$ESP_IDF_DIR/.git" ]; then
-                      ESP_IDF_CURRENT_VERSION="$(
-                        ${pkgs.git}/bin/git -C "$ESP_IDF_DIR" describe --tags --exact-match 2>/dev/null || true
-                      )"
-                      if [ "$ESP_IDF_CURRENT_VERSION" != "$ESP_IDF_VERSION" ]; then
-                        ESP_IDF_BACKUP_DIR="$ESP_ROOT/esp-idf-$ESP_IDF_CURRENT_VERSION-$(date +%Y%m%d%H%M%S)"
-                        echo "Preserving ESP-IDF $ESP_IDF_CURRENT_VERSION at $ESP_IDF_BACKUP_DIR before upgrading to $ESP_IDF_VERSION"
+                      ESP_IDF_CURRENT_REF="$(cat "$ESP_IDF_REF_FILE" 2>/dev/null || true)"
+                      if [ "$ESP_IDF_CURRENT_REF" != "$ESP_IDF_REF" ]; then
+                        ESP_IDF_BACKUP_DIR="$ESP_ROOT/esp-idf-$(date +%Y%m%d%H%M%S)"
+                        echo "Preserving ESP-IDF at $ESP_IDF_BACKUP_DIR before switching to $ESP_IDF_REF"
                         mv "$ESP_IDF_DIR" "$ESP_IDF_BACKUP_DIR"
                       fi
                     fi
 
                     if [ ! -d "$ESP_IDF_DIR/.git" ]; then
                       /usr/bin/sudo -u ${primaryUser} -H \
-                        ${pkgs.git}/bin/git clone --branch "$ESP_IDF_VERSION" --recursive \
+                        ${pkgs.git}/bin/git clone --branch "$ESP_IDF_REF" --recursive \
                         https://github.com/espressif/esp-idf.git "$ESP_IDF_DIR"
                     fi
 
@@ -410,18 +410,15 @@
                         set -e
                         cd '$ESP_IDF_DIR'
 
-                        # The release is pinned, so avoid recursively fetching every
-                        # ESP-IDF submodule branch on every darwin-rebuild. Apart from
-                        # being slow, stale upstream submodule refs can make that fetch
-                        # fail even though this release's pinned commits are available.
-                        if ! ${pkgs.git}/bin/git rev-parse --verify --quiet \
-                          'refs/tags/$ESP_IDF_VERSION^{commit}' >/dev/null; then
-                          ${pkgs.git}/bin/git fetch --no-recurse-submodules origin \
-                            'refs/tags/$ESP_IDF_VERSION:refs/tags/$ESP_IDF_VERSION'
-                        fi
-                        ${pkgs.git}/bin/git checkout --detach '$ESP_IDF_VERSION'
+                        # Follow the maintained release branch, but fetch only that
+                        # branch. Recursively fetching every upstream branch is slow
+                        # and can fail on stale, unrelated submodule refs.
+                        ${pkgs.git}/bin/git fetch --no-recurse-submodules origin \
+                          'refs/heads/$ESP_IDF_REF:refs/remotes/origin/$ESP_IDF_REF'
+                        ${pkgs.git}/bin/git checkout --detach 'refs/remotes/origin/$ESP_IDF_REF'
                         ${pkgs.git}/bin/git submodule sync --recursive
                         ${pkgs.git}/bin/git submodule update --init --recursive
+                        printf '%s\\n' '$ESP_IDF_REF' > '$ESP_IDF_REF_FILE'
                         ./install.sh esp32
                         python3 tools/idf_tools.py install-python-env --reinstall --features core
                       "
