@@ -5,7 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-    workmux.url = "github:raine/workmux";
   };
 
   outputs =
@@ -13,7 +12,6 @@
       self,
       nix-darwin,
       nixpkgs,
-      workmux,
     }:
     let
       configuration =
@@ -52,7 +50,6 @@
             pkgs.tmuxPlugins.catppuccin
             pkgs.tmuxPlugins.cpu
             pkgs.tmuxPlugins.battery
-            workmux.packages.${pkgs.stdenv.hostPlatform.system}.default
 
             # neovim
             pkgs.neovim
@@ -158,6 +155,7 @@
               "docker"
               "docker-compose"
               "raine/aven/aven"
+              "workmux"
             ];
             casks = [
               "1password"
