@@ -86,6 +86,7 @@
             pkgs.pam_u2f
             pkgs.fswatch
             pkgs.watchexec
+            pkgs.inkscape
             pkgs.atuin
             pkgs.zoxide
             pkgs.git
