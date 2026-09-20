@@ -209,16 +209,9 @@
               "Xcode" = 497799835;
             };
 
-            # Homebrew 5 removed Homebrew Bundle's --force-cleanup flag, but
-            # nix-darwin currently emits it for cleanup = "zap". Pass the
-            # supported equivalent directly until nix-darwin catches up.
             onActivation.autoUpdate = true;
             onActivation.upgrade = true;
             onActivation.cleanup = "none";
-            onActivation.extraFlags = [
-              "--cleanup"
-              "--zap"
-            ];
           };
 
           environment.systemPath = [
