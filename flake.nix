@@ -376,7 +376,7 @@
                     # installer manages the target toolchains and Python env.
                     ESP_ROOT="${homeDir}/esp"
                     ESP_IDF_DIR="$ESP_ROOT/esp-idf"
-                    ESP_IDF_VERSION="v5.4.4"
+                    ESP_IDF_VERSION="v6.1"
 
                     mkdir -p "$ESP_ROOT"
                     chown ${primaryUser}:staff "$ESP_ROOT"
