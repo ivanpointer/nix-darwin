@@ -66,6 +66,7 @@
             pkgs.nil
             pkgs.nodejs
             pkgs.cargo
+            pkgs.uv
             # System-wide image-analysis Python. Its python3 is on the
             # nix-darwin system PATH ahead of macOS's /usr/bin/python3.
             pythonWithUiTools
@@ -331,6 +332,16 @@
                         ${pkgs.nodejs}/bin/npm install --global --no-audit --no-fund \
                         "''${NPM_GLOBAL_PACKAGES[@]}"
                     fi
+
+                    # Hermes Agent is a fast-moving Python CLI. Keep its mutable
+                    # uv tool environment in the user's home directory while
+                    # nix-darwin provides the pinned uv and Python runtimes.
+                    /usr/bin/sudo -u ${primaryUser} -H env \
+                      HOME="${homeDir}" \
+                      PATH="${pkgs.uv}/bin:${pkgs.python313}/bin:$PATH" \
+                      ${pkgs.uv}/bin/uv tool install --upgrade \
+                        --python ${pkgs.python313}/bin/python \
+                        hermes-agent
 
                     # Keep Aven's per-user sync daemon installed. This is
                     # idempotent and makes sync.interval_seconds effective.
