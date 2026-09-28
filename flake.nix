@@ -5,11 +5,18 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    # Pinned fork commit while the machine-stats PR is under upstream review.
+    # `flake.lock` records the immutable source hash as well as this revision.
+    graftStatsSrc = {
+      url = "github:ivanpointer/Graft/7baa4c04d6804837074271a91d4883774e4e08d1";
+      flake = false;
+    };
   };
 
   outputs =
     inputs@{
       self,
+      graftStatsSrc,
       nix-darwin,
       nixpkgs,
     }:
@@ -20,6 +27,45 @@
           primaryUser = "ivanpointer";
           homeDir = "/Users/${primaryUser}";
           npmGlobalPrefix = "${homeDir}/.local/share/npm-global";
+          # Build Graft from a lock-pinned fork revision instead of a package in
+          # this machine's home directory.  Its runtime dependencies live in the
+          # derivation, so `/run/current-system/sw/bin/graft` survives a clean
+          # bootstrap without a mutable npm-global installation.
+          graftStats = pkgs.buildNpmPackage {
+            pname = "nanonets-graft";
+            version = "0.20.0-stats-7baa4c0";
+            src = graftStatsSrc;
+            npmDepsHash = "sha256-POBZIytQ+9ZFivKhmacsqJm7UvNohCMYD0oWZiqfkdY=";
+            # tree-sitter-swift incorrectly declares tree-sitter-cli as a
+            # runtime dependency; its install script downloads an unpinned
+            # platform binary.  Skip install hooks, then compile the grammar
+            # addons below from the lock-pinned C/C++ sources.
+            npmFlags = [ "--ignore-scripts" ];
+            nativeBuildInputs = [ pkgs.gnumake pkgs.pkg-config pkgs.python3 ];
+            installPhase = ''
+              runHook preInstall
+              node_gyp="$PWD/node_modules/.bin/node-gyp"
+              for grammar in node_modules/tree-sitter-* node_modules/@*/tree-sitter-*; do
+                [ -f "$grammar/binding.gyp" ] || continue
+                (cd "$grammar" && "$node_gyp" rebuild)
+              done
+              # This is only a parser-generation tool and is not loaded at
+              # runtime.  Removing it also makes accidental network fetches
+              # impossible in the installed package.
+              rm -rf node_modules/tree-sitter-cli
+              npm prune --omit=dev --ignore-scripts
+              packageDir="$out/lib/node_modules/@nanonets/graft"
+              mkdir -p "$packageDir" "$out/bin" "$out/share/graft"
+              cp -R dist package.json node_modules "$packageDir/"
+              cat > "$out/bin/graft" <<EOF
+              #!${pkgs.runtimeShell}
+              exec ${pkgs.nodejs}/bin/node "$out/lib/node_modules/@nanonets/graft/dist/cli.js" "\$@"
+              EOF
+              chmod 0755 "$out/bin/graft"
+              cp "$packageDir/dist/claude/skill-template.js" "$out/share/graft/skill-template.js"
+              runHook postInstall
+            '';
+          };
           pythonWithUiTools = pkgs.python314.withPackages (ps: [
             ps.pillow
             ps.numpy
@@ -30,10 +76,6 @@
             "@earendil-works/pi-coding-agent@latest"
             "opencode-ai@latest"
             "pi-mcp-extension@latest"
-            # Local dogfood build with machine-local Graft usage statistics.
-            # npm cannot build this repo directly as a Git dependency because
-            # prepare needs tsc.
-            "file:${homeDir}/.local/share/npm-packages/nanonets-graft-0.20.0-dogfood-80692e5-stats.tgz"
           ];
           mkAvenDaemon = pkgs.writeShellScript "mk-aven-daemon" ''
             set -euo pipefail
@@ -68,6 +110,7 @@
             # LSPs
             pkgs.nil
             pkgs.nodejs
+            graftStats
             pkgs.cargo
             pkgs.uv
             # System-wide image-analysis Python. Its python3 is on the
