@@ -8,7 +8,7 @@
     # Pinned fork commit while the machine-stats PR is under upstream review.
     # `flake.lock` records the immutable source hash as well as this revision.
     graftStatsSrc = {
-      url = "github:ivanpointer/Graft/40e8320a21b34787ceb7611c9e1042b0cdf08d33";
+      url = "github:ivanpointer/Graft/39a4f58";
       flake = false;
     };
   };
@@ -33,9 +33,9 @@
           # bootstrap without a mutable npm-global installation.
           graftStats = pkgs.buildNpmPackage {
             pname = "nanonets-graft";
-            version = "0.20.0-stats-40e8320";
+            version = "0.20.0-stats-39a4f58";
             src = graftStatsSrc;
-            npmDepsHash = "sha256-POBZIytQ+9ZFivKhmacsqJm7UvNohCMYD0oWZiqfkdY=";
+            npmDepsHash = "sha256-P6o3cCdBQcJn/EtbGB0Sx9e7+O4N4ZOHfSw3HFO7DaY=";
             # tree-sitter-swift incorrectly declares tree-sitter-cli as a
             # runtime dependency; its install script downloads an unpinned
             # platform binary.  Skip install hooks, then compile the grammar
