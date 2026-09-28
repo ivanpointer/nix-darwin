@@ -30,10 +30,10 @@
             "@earendil-works/pi-coding-agent@latest"
             "opencode-ai@latest"
             "pi-mcp-extension@latest"
-            # Local dogfood build of every in-flight ivanpointer/Graft fix at
-            # c241674. npm cannot build this repo directly as a Git dependency
-            # because prepare needs tsc.
-            "file:${homeDir}/.local/share/npm-packages/nanonets-graft-0.20.0-dogfood-c241674.tgz"
+            # Local dogfood build with machine-local Graft usage statistics.
+            # npm cannot build this repo directly as a Git dependency because
+            # prepare needs tsc.
+            "file:${homeDir}/.local/share/npm-packages/nanonets-graft-0.20.0-dogfood-80692e5-stats.tgz"
           ];
           mkAvenDaemon = pkgs.writeShellScript "mk-aven-daemon" ''
             set -euo pipefail
