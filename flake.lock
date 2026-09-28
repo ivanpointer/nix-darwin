@@ -3,17 +3,17 @@
     "graftStatsSrc": {
       "flake": false,
       "locked": {
-        "lastModified": 1790634826,
-        "narHash": "sha256-8n0Ia+tZefYXWifhig1HvRVpOcAMOdHgXzR0IBQiDkA=",
+        "lastModified": 1790638578,
+        "narHash": "sha256-pti4lA6Xa6cMuDYZClAxahEhQjwALGDQv40YGHJyBWs=",
         "owner": "ivanpointer",
         "repo": "Graft",
-        "rev": "95c29340443670c1c358c02667d90c22fc9e5f82",
+        "rev": "f9a0d76cbcb2079260d51856a1154b8ab24a34d5",
         "type": "github"
       },
       "original": {
         "owner": "ivanpointer",
-        "ref": "95c2934",
         "repo": "Graft",
+        "rev": "f9a0d76cbcb2079260d51856a1154b8ab24a34d5",
         "type": "github"
       }
     },
