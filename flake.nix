@@ -31,9 +31,9 @@
             "opencode-ai@latest"
             "pi-mcp-extension@latest"
             # Local dogfood build of every in-flight ivanpointer/Graft fix at
-            # cc5dac3. npm cannot build this repo directly as a Git dependency
+            # c241674. npm cannot build this repo directly as a Git dependency
             # because prepare needs tsc.
-            "file:${homeDir}/.local/share/npm-packages/nanonets-graft-0.20.0-dogfood-cc5dac3.tgz"
+            "file:${homeDir}/.local/share/npm-packages/nanonets-graft-0.20.0-dogfood-c241674.tgz"
           ];
           mkAvenDaemon = pkgs.writeShellScript "mk-aven-daemon" ''
             set -euo pipefail
@@ -344,7 +344,7 @@
                       PATH="${pkgs.uv}/bin:${pkgs.python313}/bin:$PATH" \
                       ${pkgs.uv}/bin/uv tool install --upgrade \
                         --python ${pkgs.python313}/bin/python \
-                        hermes-agent
+                        'hermes-agent[mcp]'
 
                     # Keep Aven's per-user sync daemon installed. This is
                     # idempotent and makes sync.interval_seconds effective.
