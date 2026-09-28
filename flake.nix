@@ -65,7 +65,9 @@
               cp -R "$packageDir/dist/claude" "$out/share/graft/claude"
               cat > "$out/bin/graft-claude-dir" <<EOF
               #!${pkgs.runtimeShell}
-              printf '%s\\n' "$out/share/graft/claude"
+              # Point at the package copy so hooks and sibling host adapters
+              # resolve from the same current Nix generation.
+              printf '%s\\n' "$packageDir/dist/claude"
               EOF
               chmod 0755 "$out/bin/graft-claude-dir"
               runHook postInstall
