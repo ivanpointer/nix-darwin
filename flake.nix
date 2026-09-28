@@ -8,7 +8,7 @@
     # Pinned fork commit while the machine-stats PR is under upstream review.
     # `flake.lock` records the immutable source hash as well as this revision.
     graftStatsSrc = {
-      url = "github:ivanpointer/Graft/5f45553b62fe2521755114c769868c57264f1d17";
+      url = "github:ivanpointer/Graft/64d87c825948dd66e909bcfd3bdbbee9b4d93d8e";
       flake = false;
     };
   };
@@ -33,7 +33,7 @@
           # bootstrap without a mutable npm-global installation.
           graftStats = pkgs.buildNpmPackage {
             pname = "nanonets-graft";
-            version = "0.20.0-stats-5f45553";
+            version = "0.20.0-stats-64d87c8";
             src = graftStatsSrc;
             npmDepsHash = "sha256-POBZIytQ+9ZFivKhmacsqJm7UvNohCMYD0oWZiqfkdY=";
             # tree-sitter-swift incorrectly declares tree-sitter-cli as a
@@ -62,7 +62,12 @@
               exec ${pkgs.nodejs}/bin/node "$out/lib/node_modules/@nanonets/graft/dist/cli.js" "\$@"
               EOF
               chmod 0755 "$out/bin/graft"
-              cp "$packageDir/dist/claude/skill-template.js" "$out/share/graft/skill-template.js"
+              cp -R "$packageDir/dist/claude" "$out/share/graft/claude"
+              cat > "$out/bin/graft-claude-dir" <<EOF
+              #!${pkgs.runtimeShell}
+              printf '%s\\n' "$out/share/graft/claude"
+              EOF
+              chmod 0755 "$out/bin/graft-claude-dir"
               runHook postInstall
             '';
           };
