@@ -1,19 +1,19 @@
 {
   "nodes": {
-    "graftStatsSrc": {
+    "graftDogfoodSrc": {
       "flake": false,
       "locked": {
-        "lastModified": 1790638578,
-        "narHash": "sha256-pti4lA6Xa6cMuDYZClAxahEhQjwALGDQv40YGHJyBWs=",
+        "lastModified": 1790640926,
+        "narHash": "sha256-DZE8Jpfx6+GVjy9RMyIq6INOKQrdY2rzyxQb3V7Wj8o=",
         "owner": "ivanpointer",
         "repo": "Graft",
-        "rev": "f9a0d76cbcb2079260d51856a1154b8ab24a34d5",
+        "rev": "0b0f06c891e6264f1de749229f959bf0f1f67d62",
         "type": "github"
       },
       "original": {
         "owner": "ivanpointer",
         "repo": "Graft",
-        "rev": "f9a0d76cbcb2079260d51856a1154b8ab24a34d5",
+        "rev": "0b0f06c891e6264f1de749229f959bf0f1f67d62",
         "type": "github"
       }
     },
@@ -56,7 +56,7 @@
     },
     "root": {
       "inputs": {
-        "graftStatsSrc": "graftStatsSrc",
+        "graftDogfoodSrc": "graftDogfoodSrc",
         "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs"
       }

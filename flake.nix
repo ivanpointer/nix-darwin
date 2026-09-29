@@ -5,10 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-    # Pinned fork commit while the machine-stats PR is under upstream review.
-    # `flake.lock` records the immutable source hash as well as this revision.
-    graftStatsSrc = {
-      url = "github:ivanpointer/Graft/f9a0d76cbcb2079260d51856a1154b8ab24a34d5";
+    # Pinned dogfood commit combining the standalone machine-stats and Terraform
+    # PRs while both are under upstream review. The lock records its source hash.
+    graftDogfoodSrc = {
+      url = "github:ivanpointer/Graft/0b0f06c891e6264f1de749229f959bf0f1f67d62";
       flake = false;
     };
   };
@@ -16,7 +16,7 @@
   outputs =
     inputs@{
       self,
-      graftStatsSrc,
+      graftDogfoodSrc,
       nix-darwin,
       nixpkgs,
     }:
@@ -31,11 +31,11 @@
           # this machine's home directory.  Its runtime dependencies live in the
           # derivation, so `/run/current-system/sw/bin/graft` survives a clean
           # bootstrap without a mutable npm-global installation.
-          graftStats = pkgs.buildNpmPackage {
+          graftDogfood = pkgs.buildNpmPackage {
             pname = "nanonets-graft";
-            version = "0.20.0-stats-f9a0d76";
-            src = graftStatsSrc;
-            npmDepsHash = "sha256-P6o3cCdBQcJn/EtbGB0Sx9e7+O4N4ZOHfSw3HFO7DaY=";
+            version = "0.20.0-dogfood-0b0f06c";
+            src = graftDogfoodSrc;
+            npmDepsHash = "sha256-oynP3gsWXGQmm5qguGdusBXtW9FAeE2voXyNVBpPCs4=";
             # tree-sitter-swift incorrectly declares tree-sitter-cli as a
             # runtime dependency; its install script downloads an unpinned
             # platform binary.  Skip install hooks, then compile the grammar
@@ -117,7 +117,7 @@
             # LSPs
             pkgs.nil
             pkgs.nodejs
-            graftStats
+            graftDogfood
             pkgs.cargo
             pkgs.uv
             # System-wide image-analysis Python. Its python3 is on the
