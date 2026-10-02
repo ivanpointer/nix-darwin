@@ -124,6 +124,9 @@
             # nix-darwin system PATH ahead of macOS's /usr/bin/python3.
             pythonWithUiTools
 
+            # Media tools
+            pkgs.ffmpeg
+
             # Go development
             pkgs.go
             pkgs.gopls
